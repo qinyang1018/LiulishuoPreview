@@ -2,6 +2,7 @@
  - 修改启动时ViedoView短暂黑屏
  - 滑动后有一秒重复播放问题
  - 修复启动白屏问题
+ - 添加非rxAndroid循环方法
 
 
 ## What's LiulishuoPreview ?
