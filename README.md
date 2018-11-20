@@ -1,7 +1,7 @@
-# Fork 后修改如下
- 1. 修改启动时播ViedoView短暂黑屏
- 2. 滑动后有一秒重复播放问题
- 3. 修复启动白屏问题
+## Fork 后修改如下
+ - 修改启动时ViedoView短暂黑屏
+ - 滑动后有一秒重复播放问题
+ - 修复启动白屏问题
 
 
 ## What's LiulishuoPreview ?
