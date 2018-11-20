@@ -1,7 +1,12 @@
 package me.wangyuwei.liulishuopreview;
 
+import android.graphics.Bitmap;
+import android.media.MediaMetadataRetriever;
+import android.media.MediaPlayer;
 import android.net.Uri;
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.Message;
 import android.support.v4.view.PagerAdapter;
 import android.support.v4.view.ViewPager;
 import android.support.v7.app.AppCompatActivity;
@@ -12,6 +17,8 @@ import android.widget.ImageView;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Timer;
+import java.util.TimerTask;
 import java.util.concurrent.TimeUnit;
 
 import rx.Observable;
@@ -23,6 +30,7 @@ public class MainActivity extends AppCompatActivity {
     private PreviewVideoView mVideoView;
     private ViewPager mVpImage;
     private PreviewIndicator mIndicator;
+    private ImageView imageView;
 
     private List<View> mViewList = new ArrayList<>();
     private int[] mImageResIds = new int[]{R.mipmap.intro_text_1, R.mipmap.intro_text_2, R.mipmap.intro_text_3};
@@ -39,6 +47,7 @@ public class MainActivity extends AppCompatActivity {
         mVideoView = (PreviewVideoView) findViewById(R.id.vv_preview);
         mVpImage = (ViewPager) findViewById(R.id.vp_image);
         mIndicator = (PreviewIndicator) findViewById(R.id.indicator);
+        imageView = (ImageView) findViewById(R.id.image_view);
 
         mVideoView.setVideoURI(Uri.parse(getVideoPath()));
 
@@ -61,6 +70,7 @@ public class MainActivity extends AppCompatActivity {
                 mCurrentPage = position;
                 mIndicator.setSelected(mCurrentPage);
                 startLoop();
+//                start();
             }
 
             @Override
@@ -68,8 +78,37 @@ public class MainActivity extends AppCompatActivity {
 
             }
         });
+        MediaMetadataRetriever media = new MediaMetadataRetriever();
+        media.setDataSource(this, Uri.parse(getVideoPath()));
+        //获取第一帧
+        Bitmap bitmap = media.getFrameAtTime(1, MediaMetadataRetriever.OPTION_CLOSEST_SYNC);
+        imageView.setImageBitmap(bitmap);
+        media.release();
 
+//      start();
         startLoop();
+
+        mVideoView.setOnPreparedListener(new MediaPlayer.OnPreparedListener() {
+            @Override
+            public void onPrepared(MediaPlayer mediaPlayer) {
+                mediaPlayer.setOnInfoListener(new MediaPlayer.OnInfoListener() {
+                    @Override
+                    public boolean onInfo(MediaPlayer mediaPlayer, int what, int i1) {
+
+                        //开始播放时，就把显示第一帧的ImageView gone 掉
+                        if (what == MediaPlayer.MEDIA_INFO_VIDEO_RENDERING_START) {
+                            // video started; hide the placeholder.
+                            imageView.setVisibility(View.GONE);
+                            //videoView.seekTo(0);
+
+                            return true;
+                        }
+                        return false;
+                    }
+                });
+            }
+        });
+
 
     }
 
@@ -93,12 +132,53 @@ public class MainActivity extends AppCompatActivity {
                 .subscribe(new Action1<Long>() {
                     @Override
                     public void call(Long aLong) {
-                        mVideoView.seekTo(mCurrentPage * 6 * 1000);
+                        if (0 == mCurrentPage) {
+                            mVideoView.seekTo(mCurrentPage * 6 * 1000);
+                        } else {
+                            mVideoView.seekTo((1 + mCurrentPage * 6) * 1000);
+                        }
                         if (!mVideoView.isPlaying()) {
                             mVideoView.start();
                         }
                     }
                 });
+    }
+
+    Handler mHandler = new Handler() {
+        @Override
+        public void handleMessage(Message msg) {
+            super.handleMessage(msg);
+            if (0 == mCurrentPage) {
+                mVideoView.seekTo(mCurrentPage * 6 * 1000);
+            } else {
+                mVideoView.seekTo((1 + mCurrentPage * 6) * 1000);
+            }
+            if (!mVideoView.isPlaying()) {
+                mVideoView.start();
+            }
+        }
+    };
+
+    private Timer timer;
+    private TimerTask task;
+
+    private void start() {
+        if (null != timer) {
+            timer.cancel();
+        }
+        task = new TimerTask() {
+            @Override
+            public void run() {
+                mHandler.sendEmptyMessage(0);
+            }
+        };
+
+        timer = new Timer();
+        // 参数：
+        // 1000，延时1秒后执行。
+        // 2000，每隔2秒执行1次task。
+        timer.schedule(task, 0, 6000);
+
     }
 
     @Override
