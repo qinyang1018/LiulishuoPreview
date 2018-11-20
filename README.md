@@ -1,3 +1,9 @@
+# Fork 后修改如下
+ 1. 修改启动时播ViedoView短暂黑屏
+ 2. 滑动后有一秒重复播放问题
+ 3. 修复启动白屏问题
+
+
 ## What's LiulishuoPreview ?
 Imitate Liulishuo guide view.
 
